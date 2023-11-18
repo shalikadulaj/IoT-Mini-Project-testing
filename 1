@@ -1,0 +1,24 @@
+//test5
+#include "aws_iot_config.h"
+
+// Configure AWS IoT endpoint and credentials
+AWS_IOT_MY_ENDPOINT "your-iot-endpoint.iot.your-region.amazonaws.com"
+AWS_IOT_ROOT_CA_FILENAME "your-root-ca.pem"
+AWS_IOT_CERTIFICATE_FILENAME "your-certificate.pem.crt"
+AWS_IOT_PRIVATE_KEY_FILENAME "your-private.pem.key"
+
+
+#include "aws_iot_mqtt_client_interface.h"
+
+// Initialize the MQTT client
+AWS_IoT_Client client;
+
+// Connect to AWS IoT Core
+rc = aws_iot_mqtt_connect(&client);
+if (rc == MQTT_SUCCESS) {
+    // Publish data to a topic
+    aws_iot_mqtt_publish(&client, "your/topic", strlen("your data payload"), "your data payload", 0, false);
+}
+
+// Disconnect from AWS IoT Core
+aws_iot_mqtt_disconnect(&client);
