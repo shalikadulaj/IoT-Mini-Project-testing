@@ -1,5 +1,5 @@
 //dummy code
-
+// need to add authentication
 #include <stdio.h>
 #include <curl/curl.h>
 
@@ -11,7 +11,7 @@ int main() {
 
     curl = curl_easy_init();
     if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "http://your-grafana-instance/api/dashboards/db/your-dashboard-id");
+        curl_easy_setopt(curl, CURLOPT_URL, "http://your-grafana-instance/api/dashboards/db/your-dashboard-id");  // replace with the actual URL of your Grafana instance and the appropriate API endpoint.
         
         // Set other options as needed
         
