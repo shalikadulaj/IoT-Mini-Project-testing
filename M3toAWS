@@ -1,4 +1,4 @@
-//dumy code1
+//dumy code
 #include "aws_iot_config.h"
 
 // Configure AWS IoT endpoint and credentials
