@@ -1,0 +1,111 @@
+//dummy code
+#include <stdio.h>
+#include <string.h>
+#include "xtimer.h"
+#include "periph/gpio.h"
+#include "msg.h"
+#include "net/ipv6/addr.h"
+#include "net/mqtt/mqtt.h"
+#include "mqtt_params.h"
+
+#define SENSOR_PIN GPIO_PIN(PORT_A, 0)  // Adjust GPIO pin based on your sensor setup
+
+static char stack[THREAD_STACKSIZE_MAIN / 2];
+
+static char mqtt_stack[THREAD_STACKSIZE_MAIN / 2];
+
+static const char *mqtt_client_id = "your_client_id";
+static const char *mqtt_topic = "your_topic";
+static const char *mqtt_host = "your-iot-endpoint.iot.us-west-2.amazonaws.com";  // Replace with your AWS IoT endpoint
+static const int mqtt_port = 8883;  // MQTT port for AWS IoT
+
+static int mqtt_connack_received = 0;
+
+void setup() {
+    // Initialize GPIO and sensors
+    gpio_init(SENSOR_PIN, GPIO_IN);
+}
+
+float readSensorData() {
+    // Read data from sensors
+    // Return the data in an appropriate format
+    return 25.0;  // Replace with your actual sensor reading logic
+}
+
+void mqtt_event_handler(mqtt_event_t event) {
+    // Handle MQTT events
+    switch (event) {
+        case MQTT_EVENT_CONNECTED:
+            mqtt_connack_received = 1;
+            break;
+
+        case MQTT_EVENT_DISCONNECTED:
+            mqtt_connack_received = 0;
+            break;
+
+        default:
+            break;
+    }
+}
+
+void *mqtt_thread(void *arg) {
+    (void)arg;
+
+    mqtt_connack_received = 0;
+
+    msg_t msg;
+    mqtt_event_t event;
+
+    // Configure MQTT parameters
+    mqtt_params_t mqtt_params = {
+        .host = mqtt_host,
+        .port = mqtt_port,
+        .client_id = mqtt_client_id,
+        .event_handler = mqtt_event_handler,
+        .protocol_version = MQTT_PROTO_V311,
+    };
+
+    while (1) {
+        if (!mqtt_connack_received) {
+            // Connect to AWS IoT Core
+            mqtt_init();
+            mqtt_connect(&mqtt_params);
+
+            // Wait for connection acknowledgment
+            while (!mqtt_connack_received) {
+                xtimer_usleep(1000);
+            }
+
+            // Subscribe to a topic if needed
+            // mqtt_subscribe(...
+
+            // Main loop to publish data
+            while (1) {
+                float sensor_data = readSensorData();
+
+                char payload[20];
+                snprintf(payload, sizeof(payload), "%.2f", sensor_data);
+
+                // Publish data to AWS IoT Core
+                mqtt_publish(mqtt_topic, payload, strlen(payload), 0, 0);
+
+                xtimer_sleep(10);  // Sleep for 10 seconds
+            }
+        } else {
+            // Handle reconnection logic if needed
+            xtimer_usleep(1000000);
+        }
+    }
+
+    return NULL;
+}
+
+int main(void) {
+    // Set up GPIO and initialize sensors
+    setup();
+
+    // Create MQTT thread
+    thread_create(mqtt_stack, sizeof(mqtt_stack), THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST, mqtt_thread, NULL, "mqtt");
+
+    return 0;
+}
